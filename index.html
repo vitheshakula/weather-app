@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="api.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="entry">
+        <input type="text" id="cityInput" placeholder="Enter city name" />
+        <button onclick="searchCity()" class="search-btn">
+          <i class="fas fa-search"></i> Get Weather
+        </button>
+      </div>
+      <div id="loading" class="loading-spinner" style="display: none;"></div>
+      <h2 id="location-display">
+        <i class="fas fa-map-marker-alt"></i> <span id="location">Loading...</span>
+      </h2>
+      <h6 id="weather-description"></h6>
+      <h4 id="temperature"><span id="temp"></span><sup>°C</sup></h4>
+      <img src="" id="icon" alt="Weather Icon" class="weather-icon" />
+
+      <div class="weather-details">
+        <div class="detail-item">
+          <i class="fas fa-thermometer-half"></i> Feels Like: <span id="feels-like">--</span><sup>°C</sup>
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-wind"></i> Wind Speed: <span id="wind-speed">--</span> m/s
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-tint"></i> Humidity: <span id="humidity">--</span>%
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-tachometer-alt"></i> Pressure: <span id="pressure">--</span> hPa
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-eye"></i> Visibility: <span id="visibility">--</span> km
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-cloud"></i> Cloudiness: <span id="cloudiness">--</span>%
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-sunrise"></i> Sunrise: <span id="sunrise">--</span>
+        </div>
+        <div class="detail-item">
+          <i class="fas fa-sunset"></i> Sunset: <span id="sunset">--</span>
+        </div>
+      </div>
+
+      <div id="error-message" class="error-message"></div>
+      <button onclick="refreshWeather()" class="refresh-btn">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+  </div>
+  <script>
+    const apiKey = "597e41c0eca853495e34f542e9f0ee1d";
+    let lastSearchedCity = "Delhi";
+
+    function getWeather(city) {
+      if (!city) {
+        document.getElementById("error-message").textContent = "Please enter a city name.";
+        return;
+      }
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+      const request = new XMLHttpRequest();
+
+      document.getElementById("error-message").textContent = "";
+      document.getElementById("loading").style.display = "block";
+
+      request.open("GET", url, true);
+      request.onload = function () {
+        document.getElementById("loading").style.display = "none";
+
+        if (request.status >= 200 && request.status < 400) {
+          const obj = JSON.parse(request.responseText);
+
+          document.getElementById("location").textContent = `${obj.name}, ${obj.sys.country}`;
+          document.getElementById("temp").textContent = Math.round(obj.main.temp);
+          document.getElementById("weather-description").textContent = obj.weather[0].description;
+          document.getElementById("icon").src = `https://openweathermap.org/img/wn/${obj.weather[0].icon}@2x.png`;
+          lastSearchedCity = city;
+
+          document.getElementById("feels-like").textContent = Math.round(obj.main.feels_like);
+          document.getElementById("wind-speed").textContent = obj.wind.speed;
+          document.getElementById("humidity").textContent = obj.main.humidity;
+          document.getElementById("pressure").textContent = obj.main.pressure;
+          document.getElementById("visibility").textContent = (obj.visibility / 1000).toFixed(1);
+          document.getElementById("cloudiness").textContent = obj.clouds.all;
+
+          const sunriseTime = new Date(obj.sys.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const sunsetTime = new Date(obj.sys.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          document.getElementById("sunrise").textContent = sunriseTime;
+          document.getElementById("sunset").textContent = sunsetTime;
+
+
+        } else {
+          showError("City not found. Please check the city name and try again.");
+        }
+      };
+      request.onerror = function () {
+        document.getElementById("loading").style.display = "none";
+        showError("Failed to fetch data. Check your internet connection or try again later.");
+      };
+      request.send();
+    }
+
+    function searchCity() {
+      const city = document.getElementById("cityInput").value.trim();
+      getWeather(city);
+    }
+
+    function refreshWeather() {
+      getWeather(lastSearchedCity);
+    }
+
+    function showError(message) {
+      document.getElementById("error-message").textContent = message;
+      document.getElementById("location").textContent = "N/A";
+      document.getElementById("weather-description").textContent = "N/A";
+      document.getElementById("temp").textContent = "--";
+      document.getElementById("icon").src = "";
+      document.getElementById("feels-like").textContent = "--";
+      document.getElementById("wind-speed").textContent = "--";
+      document.getElementById("humidity").textContent = "--";
+      document.getElementById("pressure").textContent = "--";
+      document.getElementById("visibility").textContent = "--";
+      document.getElementById("cloudiness").textContent = "--";
+      document.getElementById("sunrise").textContent = "--";
+      document.getElementById("sunset").textContent = "--";
+    }
+
+    window.onload = function () {
+      document.getElementById("cityInput").value = "Delhi";
+      getWeather("Delhi");
+    };
+  </script>
+</body>
+</html>
