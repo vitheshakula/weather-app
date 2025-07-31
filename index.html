@@ -11,15 +11,19 @@
   <link rel="stylesheet" href="api.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="entry">
-        <input type="text" id="cityInput" placeholder="Enter city name" />
-        <button onclick="searchCity()" class="search-btn">
-          <i class="fas fa-search"></i> Get Weather
-        </button>
-      </div>
+  <main class="container">
+    <section class="card">
+      <header class="entry">
+        <form id="weather-form">
+          <input type="text" id="cityInput" placeholder="Enter city name" required />
+          <button type="submit" class="search-btn">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </form>
+      </header>
+
       <div id="loading" class="loading-spinner" style="display: none;"></div>
+
       <h2 id="location-display">
         <i class="fas fa-map-marker-alt"></i> <span id="location">Loading...</span>
       </h2>
@@ -27,94 +31,90 @@
       <h4 id="temperature"><span id="temp"></span><sup>°C</sup></h4>
       <img src="" id="icon" alt="Weather Icon" class="weather-icon" />
 
-      <div class="weather-details">
-        <div class="detail-item">
-          <i class="fas fa-thermometer-half"></i> Feels Like: <span id="feels-like">--</span><sup>°C</sup>
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-wind"></i> Wind Speed: <span id="wind-speed">--</span> m/s
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-tint"></i> Humidity: <span id="humidity">--</span>%
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-tachometer-alt"></i> Pressure: <span id="pressure">--</span> hPa
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-eye"></i> Visibility: <span id="visibility">--</span> km
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-cloud"></i> Cloudiness: <span id="cloudiness">--</span>%
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-sunrise"></i> Sunrise: <span id="sunrise">--</span>
-        </div>
-        <div class="detail-item">
-          <i class="fas fa-sunset"></i> Sunset: <span id="sunset">--</span>
-        </div>
-      </div>
+      <section class="weather-details">
+        <div class="detail-item"><i class="fas fa-thermometer-half"></i> Feels Like: <span id="feels-like">--</span><sup>°C</sup></div>
+        <div class="detail-item"><i class="fas fa-wind"></i> Wind Speed: <span id="wind-speed">--</span> m/s</div>
+        <div class="detail-item"><i class="fas fa-tint"></i> Humidity: <span id="humidity">--</span>%</div>
+        <div class="detail-item"><i class="fas fa-tachometer-alt"></i> Pressure: <span id="pressure">--</span> hPa</div>
+        <div class="detail-item"><i class="fas fa-eye"></i> Visibility: <span id="visibility">--</span> km</div>
+        <div class="detail-item"><i class="fas fa-cloud"></i> Cloudiness: <span id="cloudiness">--</span>%</div>
+        <div class="detail-item"><i class="fas fa-sunrise"></i> Sunrise: <span id="sunrise">--</span></div>
+        <div class="detail-item"><i class="fas fa-sunset"></i> Sunset: <span id="sunset">--</span></div>
+      </section>
 
       <div id="error-message" class="error-message"></div>
-      <button onclick="refreshWeather()" class="refresh-btn">
-        <i class="fas fa-sync-alt"></i> Refresh
-      </button>
-    </div>
-  </div>
+
+      <footer>
+        <button onclick="refreshWeather()" class="refresh-btn">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </footer>
+    </section>
+  </main>
+
   <script>
     const apiKey = "597e41c0eca853495e34f542e9f0ee1d";
-    let lastSearchedCity = "Delhi";
+    let lastSearchedCity = "Hyderabad";
 
-    function getWeather(city) {
+    async function getWeather(city) {
+      const errorMessageDiv = document.getElementById("error-message");
+      const loadingSpinner = document.getElementById("loading");
+
       if (!city) {
-        document.getElementById("error-message").textContent = "Please enter a city name.";
+        errorMessageDiv.textContent = "Please enter a city name.";
         return;
       }
 
+      errorMessageDiv.textContent = "";
+      loadingSpinner.style.display = "block";
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
       const request = new XMLHttpRequest();
 
-      document.getElementById("error-message").textContent = "";
-      document.getElementById("loading").style.display = "block";
-
       request.open("GET", url, true);
-      request.onload = function () {
-        document.getElementById("loading").style.display = "none";
-
+      request.onload = function() {
+        loadingSpinner.style.display = "none";
         if (request.status >= 200 && request.status < 400) {
           const obj = JSON.parse(request.responseText);
-
           document.getElementById("location").textContent = `${obj.name}, ${obj.sys.country}`;
           document.getElementById("temp").textContent = Math.round(obj.main.temp);
           document.getElementById("weather-description").textContent = obj.weather[0].description;
           document.getElementById("icon").src = `https://openweathermap.org/img/wn/${obj.weather[0].icon}@2x.png`;
           lastSearchedCity = city;
-
           document.getElementById("feels-like").textContent = Math.round(obj.main.feels_like);
           document.getElementById("wind-speed").textContent = obj.wind.speed;
           document.getElementById("humidity").textContent = obj.main.humidity;
           document.getElementById("pressure").textContent = obj.main.pressure;
           document.getElementById("visibility").textContent = (obj.visibility / 1000).toFixed(1);
           document.getElementById("cloudiness").textContent = obj.clouds.all;
-
           const sunriseTime = new Date(obj.sys.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           const sunsetTime = new Date(obj.sys.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           document.getElementById("sunrise").textContent = sunriseTime;
           document.getElementById("sunset").textContent = sunsetTime;
-
-
         } else {
           showError("City not found. Please check the city name and try again.");
         }
       };
-      request.onerror = function () {
-        document.getElementById("loading").style.display = "none";
+
+      request.onerror = function() {
+        loadingSpinner.style.display = "none";
         showError("Failed to fetch data. Check your internet connection or try again later.");
       };
+
       request.send();
     }
 
-    function searchCity() {
-      const city = document.getElementById("cityInput").value.trim();
+    function searchCity(event) {
+      if (event) event.preventDefault();
+      const cityInput = document.getElementById("cityInput");
+      const city = cityInput.value.trim();
+
+      if (city === "") {
+        showError("Please enter a city name.");
+        cityInput.classList.add("error-border");
+        return;
+      }
+
+      cityInput.classList.remove("error-border");
       getWeather(city);
     }
 
@@ -138,9 +138,10 @@
       document.getElementById("sunset").textContent = "--";
     }
 
-    window.onload = function () {
-      document.getElementById("cityInput").value = "Delhi";
-      getWeather("Delhi");
+    window.onload = function() {
+      document.getElementById("cityInput").value = "Hyderabad";
+      getWeather("Hyderabad");
+      document.getElementById("weather-form").addEventListener("submit", searchCity);
     };
   </script>
 </body>
